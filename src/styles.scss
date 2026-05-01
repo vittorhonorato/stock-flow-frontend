@@ -83,10 +83,14 @@ select {
 }
 
 button:not(.mat-mdc-button-base) {
+  min-height: 40px;
+  padding: 0 var(--space-md);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: var(--color-primary);
   color: var(--color-text-inverse);
+  font-weight: 600;
+  cursor: pointer;
   transition: var(--transition-default);
 }
 
@@ -104,6 +108,16 @@ a {
 }
 
 .card {
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.table-card,
+.form-card {
+  padding: var(--space-lg);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -126,10 +140,72 @@ a {
   color: var(--color-text-secondary);
 }
 
+.btn-primary,
+.mat-mdc-button-base.btn-primary {
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+  font-weight: 600;
+  transition: var(--transition-default);
+}
+
+.btn-primary:hover,
+.mat-mdc-button-base.btn-primary:hover {
+  filter: brightness(0.96);
+}
+
+.btn-secondary,
+.mat-mdc-button-base.btn-secondary {
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-weight: 600;
+  transition: var(--transition-default);
+}
+
+.btn-secondary:hover,
+.mat-mdc-button-base.btn-secondary:hover {
+  background: var(--color-surface-muted);
+}
+
+.btn-danger,
+.mat-mdc-button-base.btn-danger {
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  background: var(--color-danger);
+  color: var(--color-text-inverse);
+  font-weight: 600;
+  transition: var(--transition-default);
+}
+
+.btn-danger:hover,
+.mat-mdc-button-base.btn-danger:hover {
+  filter: brightness(0.92);
+}
+
+.btn-ghost,
+.mat-mdc-button-base.btn-ghost {
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  transition: var(--transition-default);
+}
+
+.btn-ghost:hover,
+.mat-mdc-button-base.btn-ghost:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+}
+
 .status-success,
 .status-warning,
 .status-danger,
-.status-info {
+.status-info,
+.status-neutral {
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
@@ -157,4 +233,64 @@ a {
 .status-info {
   color: var(--color-info);
   background: var(--color-info-bg);
+}
+
+.status-neutral {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+}
+
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+.mat-mdc-form-field .mdc-notched-outline__leading,
+.mat-mdc-form-field .mdc-notched-outline__notch,
+.mat-mdc-form-field .mdc-notched-outline__trailing {
+  border-color: var(--color-border) !important;
+}
+
+.mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+.mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+.mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
+  border-color: var(--color-primary) !important;
+}
+
+.mat-mdc-card {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-unelevated-button.mat-primary {
+  background: var(--gradient-primary) !important;
+  color: var(--color-text-inverse) !important;
+}
+
+.mat-mdc-table {
+  background: var(--color-surface);
+}
+
+.mat-mdc-header-row {
+  background: var(--color-surface-muted);
+}
+
+.mat-mdc-header-cell {
+  color: var(--color-text-primary);
+  font-weight: 700;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mat-mdc-cell {
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mat-mdc-paginator {
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  border-top: 1px solid var(--color-border);
 }

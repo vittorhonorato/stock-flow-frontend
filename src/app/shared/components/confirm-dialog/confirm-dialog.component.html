@@ -1,0 +1,21 @@
+<section class="confirm-dialog card" role="dialog" aria-modal="true">
+  <h2 class="confirm-dialog__title">{{ title }}</h2>
+  <p class="confirm-dialog__message">{{ message }}</p>
+
+  <div class="confirm-dialog__actions">
+    <button type="button" mat-stroked-button class="btn-ghost" (click)="onCancel()">
+      {{ cancelLabel }}
+    </button>
+
+    <button
+      type="button"
+      mat-flat-button
+      [color]="danger ? 'warn' : 'primary'"
+      [ngClass]="danger ? 'btn-danger' : 'btn-primary'"
+      (click)="onConfirm()"
+    >
+      {{ confirmLabel }}
+    </button>
+  </div>
+</section>
+

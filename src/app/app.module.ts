@@ -13,6 +13,12 @@ import { FornecedorListPageComponent } from './features/fornecedores/pages/forne
 import { EstoqueMovimentacaoPageComponent } from './features/estoque/pages/estoque-movimentacao-page/estoque-movimentacao-page.component';
 import { MovimentacaoListPageComponent } from './features/movimentacoes/pages/movimentacao-list-page/movimentacao-list-page.component';
 import { EstoqueBaixoPageComponent } from './features/alertas/pages/estoque-baixo-page/estoque-baixo-page.component';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { PageHeaderComponent } from './shared/components/page-header/page-header.component';
+import { LoadingComponent } from './shared/components/loading/loading.component';
+import { EmptyStateComponent } from './shared/components/empty-state/empty-state.component';
+import { StatusBadgeComponent } from './shared/components/status-badge/status-badge.component';
+import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
 
 @NgModule({
   declarations: [
@@ -30,7 +36,13 @@ import { EstoqueBaixoPageComponent } from './features/alertas/pages/estoque-baix
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+    BrowserAnimationsModule,
+    PageHeaderComponent,
+    LoadingComponent,
+    EmptyStateComponent,
+    StatusBadgeComponent,
+    ConfirmDialogComponent
   ],
   providers: [],
   bootstrap: [AppComponent]
