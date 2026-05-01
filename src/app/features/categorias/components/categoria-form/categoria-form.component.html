@@ -1,0 +1,34 @@
+<div class="categoria-form">
+  <h3 class="section-title">{{ categoriaSelecionada ? 'Editar Categoria' : 'Nova Categoria' }}</h3>
+  <p class="section-subtitle">
+    {{ categoriaSelecionada ? 'Atualize os dados da categoria selecionada.' : 'Preencha os dados para criar uma nova categoria.' }}
+  </p>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="categoria-form__body">
+    <mat-form-field appearance="outline">
+      <mat-label>Nome</mat-label>
+      <input matInput formControlName="nome" placeholder="Ex: Eletrônicos" />
+      <mat-error *ngIf="form.controls.nome.hasError('required')">
+        Nome é obrigatório.
+      </mat-error>
+      <mat-error *ngIf="form.controls.nome.hasError('minlength')">
+        Nome deve ter no mínimo 2 caracteres.
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Descrição</mat-label>
+      <textarea matInput formControlName="descricao" rows="4" placeholder="Descrição opcional da categoria"></textarea>
+    </mat-form-field>
+
+    <div class="categoria-form__actions">
+      <button type="button" mat-stroked-button class="btn-ghost" (click)="cancelled.emit()">
+        Cancelar
+      </button>
+      <button type="submit" mat-flat-button color="primary" class="btn-primary" [disabled]="saving">
+        {{ categoriaSelecionada ? 'Salvar Alterações' : 'Criar Categoria' }}
+      </button>
+    </div>
+  </form>
+</div>
+

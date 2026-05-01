@@ -1,0 +1,23 @@
+.categoria-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.section-title {
+  margin-bottom: var(--space-xs);
+}
+
+.categoria-form__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.categoria-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+

@@ -1,0 +1,51 @@
+<div class="categoria-table__wrapper">
+  <table mat-table [dataSource]="categorias" class="categoria-table">
+    <ng-container matColumnDef="nome">
+      <th mat-header-cell *matHeaderCellDef>Nome</th>
+      <td mat-cell *matCellDef="let categoria">{{ categoria.nome }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="descricao">
+      <th mat-header-cell *matHeaderCellDef>Descrição</th>
+      <td mat-cell *matCellDef="let categoria">
+        {{ categoria.descricao || 'Sem descrição' }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>Status</th>
+      <td mat-cell *matCellDef="let categoria">
+        <app-status-badge
+          [label]="categoria.ativa ? 'Ativa' : 'Inativa'"
+          [type]="categoria.ativa ? 'success' : 'neutral'"
+        ></app-status-badge>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="acoes">
+      <th mat-header-cell *matHeaderCellDef class="categoria-table__actions-header">Ações</th>
+      <td mat-cell *matCellDef="let categoria" class="categoria-table__actions-cell">
+        <div class="categoria-table__actions-buttons">
+          <button mat-icon-button type="button" class="btn-ghost" (click)="editar.emit(categoria)" aria-label="Editar categoria">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button type="button" class="btn-ghost categoria-table__danger" (click)="excluir.emit(categoria)" aria-label="Excluir categoria">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+  </table>
+</div>
+
+<mat-paginator
+  [length]="totalElements"
+  [pageIndex]="pageIndex"
+  [pageSize]="pageSize"
+  [pageSizeOptions]="[5, 10, 20]"
+  showFirstLastButtons
+  (page)="pageChange.emit($event)"
+></mat-paginator>

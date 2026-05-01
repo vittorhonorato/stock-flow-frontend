@@ -1,5 +1,14 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule } from '@angular/common/http';
+import { ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatTableModule } from '@angular/material/table';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -19,6 +28,8 @@ import { LoadingComponent } from './shared/components/loading/loading.component'
 import { EmptyStateComponent } from './shared/components/empty-state/empty-state.component';
 import { StatusBadgeComponent } from './shared/components/status-badge/status-badge.component';
 import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
+import { CategoriaFormComponent } from './features/categorias/components/categoria-form/categoria-form.component';
+import { CategoriaTableComponent } from './features/categorias/components/categoria-table/categoria-table.component';
 
 @NgModule({
   declarations: [
@@ -29,6 +40,8 @@ import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confi
     DashboardPageComponent,
     ProdutoListPageComponent,
     CategoriaListPageComponent,
+    CategoriaTableComponent,
+    CategoriaFormComponent,
     FornecedorListPageComponent,
     EstoqueMovimentacaoPageComponent,
     MovimentacaoListPageComponent,
@@ -36,8 +49,17 @@ import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confi
   ],
   imports: [
     BrowserModule,
+    HttpClientModule,
+    ReactiveFormsModule,
     AppRoutingModule,
     BrowserAnimationsModule,
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatPaginatorModule,
+    MatTableModule,
     PageHeaderComponent,
     LoadingComponent,
     EmptyStateComponent,
