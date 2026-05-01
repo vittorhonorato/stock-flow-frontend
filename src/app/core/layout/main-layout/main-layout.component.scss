@@ -1,7 +1,7 @@
 .layout {
   display: flex;
   min-height: 100vh;
-  background: #f8fafc;
+  background: var(--color-background);
 }
 
 .layout-content {
@@ -12,5 +12,5 @@
 }
 
 .page-content {
-  padding: 24px;
+  padding: var(--space-lg);
 }
