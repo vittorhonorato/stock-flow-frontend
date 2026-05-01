@@ -1,0 +1,57 @@
+.header {
+  height: 88px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #0f172a;
+}
+
+.header p {
+  margin: 4px 0 0;
+  color: #64748b;
+}
+
+.user-area {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.notification {
+  font-size: 22px;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  padding: 10px 14px;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.user-card small {
+  display: block;
+  color: #64748b;
+}
