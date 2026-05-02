@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, Validators } from '@angular/forms';
+import { PageEvent } from '@angular/material/paginator';
 import { finalize } from 'rxjs';
+import { FornecedorFilter } from '../../models/fornecedor-filter.model';
 import {
   FornecedorRequest,
   TipoDocumentoFornecedor
@@ -8,6 +10,8 @@ import {
 import { FornecedorResponse } from '../../models/fornecedor-response.model';
 import { ValidacaoDocumentoFornecedorResponse } from '../../models/fornecedor-validacao-documento-response.model';
 import { FornecedorService } from '../../services/fornecedor.service';
+
+type FornecedorModo = 'cadastro' | 'lista';
 
 @Component({
   selector: 'app-fornecedor-list-page',
@@ -61,15 +65,37 @@ export class FornecedorListPageComponent {
     'TO'
   ];
 
+  readonly displayedColumns = ['nome', 'documento', 'tipoDocumento', 'situacao', 'status', 'acoes'];
+  readonly pageSizeOptions = [5, 10, 20];
+
+  modo: FornecedorModo = 'cadastro';
   validandoDocumento = false;
+  carregandoEdicao = false;
   salvando = false;
   documentoValidado = false;
+  loadingLista = false;
 
   mensagemErro: string | null = null;
   mensagemSucesso: string | null = null;
+  mensagemListaErro: string | null = null;
 
   validacaoDocumento: ValidacaoDocumentoFornecedorResponse | null = null;
   fornecedorEmEdicao: FornecedorResponse | null = null;
+  fornecedorParaDesativar: FornecedorResponse | null = null;
+  confirmandoDesativacao = false;
+
+  fornecedores: FornecedorResponse[] = [];
+  totalElements = 0;
+
+  filtro: FornecedorFilter = {
+    page: 0,
+    size: 5
+  };
+
+  readonly termoControl = new FormControl('', { nonNullable: true });
+  readonly tipoDocumentoFiltroControl = new FormControl<TipoDocumentoFornecedor | ''>('', {
+    nonNullable: true
+  });
 
   readonly documentoForm = this.fb.nonNullable.group({
     documento: ['', [Validators.required, Validators.minLength(11)]]
@@ -92,6 +118,77 @@ export class FornecedorListPageComponent {
     private readonly fornecedorService: FornecedorService
   ) {
     this.bloquearFormularioCadastro();
+  }
+
+  get emModoCadastro(): boolean {
+    return this.modo === 'cadastro';
+  }
+
+  get exibirLoadingOverlay(): boolean {
+    return this.validandoDocumento || this.carregandoEdicao;
+  }
+
+  get loadingOverlayMessage(): string {
+    if (this.carregandoEdicao) {
+      return 'Carregando fornecedor...';
+    }
+
+    return 'Validando documento...';
+  }
+
+  onToggleModoPrincipal(): void {
+    if (this.emModoCadastro) {
+      this.irParaLista();
+      return;
+    }
+
+    this.prepararNovoCadastro();
+  }
+
+  irParaLista(): void {
+    this.modo = 'lista';
+    this.mensagemListaErro = null;
+    this.carregarFornecedores();
+  }
+
+  prepararNovoCadastro(): void {
+    this.modo = 'cadastro';
+    this.redefinirFluxo(true);
+  }
+
+  pesquisarFornecedores(): void {
+    this.filtro = {
+      ...this.filtro,
+      termo: this.termoControl.value.trim() || undefined,
+      tipoDocumento: this.tipoDocumentoFiltroControl.value || undefined,
+      page: 0
+    };
+
+    this.carregarFornecedores();
+  }
+
+  limparFiltrosLista(): void {
+    this.termoControl.setValue('');
+    this.tipoDocumentoFiltroControl.setValue('');
+
+    this.filtro = {
+      ...this.filtro,
+      termo: undefined,
+      tipoDocumento: undefined,
+      page: 0
+    };
+
+    this.carregarFornecedores();
+  }
+
+  onPageChangeLista(event: PageEvent): void {
+    this.filtro = {
+      ...this.filtro,
+      page: event.pageIndex,
+      size: event.pageSize
+    };
+
+    this.carregarFornecedores();
   }
 
   validarDocumento(): void {
@@ -130,7 +227,7 @@ export class FornecedorListPageComponent {
         },
         error: () => {
           this.documentoValidado = false;
-          this.cadastroForm.disable();
+          this.bloquearFormularioCadastro();
           this.validacaoDocumento = null;
           this.mensagemErro = 'Não foi possível validar o documento informado.';
         }
@@ -181,6 +278,10 @@ export class FornecedorListPageComponent {
 
           this.documentoForm.controls.documento.setValue(fornecedor.documento);
           this.preencherFormularioComFornecedor(fornecedor);
+
+          if (!this.emModoCadastro) {
+            this.irParaLista();
+          }
         },
         error: () => {
           this.mensagemErro = 'Não foi possível salvar o fornecedor.';
@@ -188,10 +289,96 @@ export class FornecedorListPageComponent {
       });
   }
 
-  redefinirFluxo(): void {
+  editarFornecedor(fornecedor: FornecedorResponse): void {
+    this.modo = 'cadastro';
+    this.carregandoEdicao = true;
+    this.mensagemErro = null;
+    this.mensagemSucesso = null;
+
+    this.fornecedorService
+      .buscarPorId(fornecedor.id)
+      .pipe(
+        finalize(() => {
+          this.carregandoEdicao = false;
+        })
+      )
+      .subscribe({
+        next: (fornecedorCompleto) => {
+          this.fornecedorEmEdicao = fornecedorCompleto;
+          this.documentoValidado = true;
+
+          this.validacaoDocumento = {
+            documento: fornecedorCompleto.documento,
+            nome: fornecedorCompleto.nome,
+            tipoDocumento: fornecedorCompleto.tipoDocumento,
+            situacaoCadastral: fornecedorCompleto.situacaoCadastral,
+            documentoValido: true,
+            permiteCadastro: true,
+            dataValidacao: undefined
+          };
+
+          this.documentoForm.controls.documento.setValue(fornecedorCompleto.documento);
+          this.preencherFormularioComFornecedor(fornecedorCompleto);
+        },
+        error: () => {
+          this.mensagemErro = 'Não foi possível carregar o fornecedor para edição.';
+          this.redefinirFluxo(true);
+        }
+      });
+  }
+
+  solicitarDesativacao(fornecedor: FornecedorResponse): void {
+    this.fornecedorParaDesativar = fornecedor;
+    this.confirmandoDesativacao = true;
+  }
+
+  confirmarDesativacao(): void {
+    if (!this.fornecedorParaDesativar) {
+      return;
+    }
+
+    const fornecedor = this.fornecedorParaDesativar;
+    this.loadingLista = true;
+    this.mensagemListaErro = null;
+
+    this.fornecedorService
+      .excluir(fornecedor.id)
+      .pipe(
+        finalize(() => {
+          this.loadingLista = false;
+          this.cancelarDesativacao();
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.mensagemSucesso = 'Fornecedor desativado com sucesso.';
+
+          if (this.fornecedorEmEdicao?.id === fornecedor.id) {
+            this.redefinirFluxo(true);
+          }
+
+          this.carregarFornecedores();
+        },
+        error: () => {
+          this.mensagemListaErro = 'Não foi possível desativar o fornecedor.';
+        }
+      });
+  }
+
+  cancelarDesativacao(): void {
+    this.confirmandoDesativacao = false;
+    this.fornecedorParaDesativar = null;
+  }
+
+  redefinirFluxo(manterModoAtual = false): void {
+    if (!manterModoAtual) {
+      this.modo = 'cadastro';
+    }
+
     this.documentoForm.reset({ documento: '' });
     this.documentoValidado = false;
     this.validandoDocumento = false;
+    this.carregandoEdicao = false;
     this.salvando = false;
     this.mensagemErro = null;
     this.mensagemSucesso = null;
@@ -210,6 +397,30 @@ export class FornecedorListPageComponent {
       uf: ''
     });
     this.bloquearFormularioCadastro();
+  }
+
+  private carregarFornecedores(): void {
+    this.loadingLista = true;
+    this.mensagemListaErro = null;
+
+    this.fornecedorService
+      .listar(this.filtro)
+      .pipe(
+        finalize(() => {
+          this.loadingLista = false;
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          this.fornecedores = response.content;
+          this.totalElements = response.totalElements;
+        },
+        error: () => {
+          this.fornecedores = [];
+          this.totalElements = 0;
+          this.mensagemListaErro = 'Não foi possível carregar os fornecedores.';
+        }
+      });
   }
 
   private preencherFormularioComValidacao(
