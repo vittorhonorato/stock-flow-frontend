@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormControl, Validators } from '@angular/forms';
 import { PageEvent } from '@angular/material/paginator';
 import { finalize } from 'rxjs';
+import { ApiError } from '../../../../core/errors/api-error';
+import { BrInputMaskUtil } from '../../../../shared/utils/br-input-mask.util';
 import { FornecedorFilter } from '../../models/fornecedor-filter.model';
 import {
   FornecedorRequest,
@@ -191,6 +193,33 @@ export class FornecedorListPageComponent {
     this.carregarFornecedores();
   }
 
+  onDocumentoValidacaoInput(): void {
+    const control = this.documentoForm.controls.documento;
+    const formatted = BrInputMaskUtil.formatCpfCnpj(control.value);
+
+    if (control.value !== formatted) {
+      control.setValue(formatted, { emitEvent: false });
+    }
+  }
+
+  onDocumentoCadastroInput(): void {
+    const control = this.cadastroForm.controls.documento;
+    const formatted = BrInputMaskUtil.formatCpfCnpj(control.value);
+
+    if (control.value !== formatted) {
+      control.setValue(formatted, { emitEvent: false });
+    }
+  }
+
+  onTelefoneInput(): void {
+    const control = this.cadastroForm.controls.telefone;
+    const formatted = BrInputMaskUtil.formatPhone(control.value);
+
+    if (control.value !== formatted) {
+      control.setValue(formatted, { emitEvent: false });
+    }
+  }
+
   validarDocumento(): void {
     if (this.documentoForm.invalid) {
       this.documentoForm.markAllAsTouched();
@@ -201,7 +230,7 @@ export class FornecedorListPageComponent {
     this.mensagemSucesso = null;
     this.validandoDocumento = true;
 
-    const documento = this.somenteDigitos(this.documentoForm.controls.documento.value);
+    const documento = BrInputMaskUtil.onlyDigits(this.documentoForm.controls.documento.value);
 
     this.fornecedorService
       .validarDocumento(documento)
@@ -212,7 +241,10 @@ export class FornecedorListPageComponent {
       )
       .subscribe({
         next: (response) => {
-          this.validacaoDocumento = response;
+          this.validacaoDocumento = {
+            ...response,
+            documento: BrInputMaskUtil.formatCpfCnpj(response.documento)
+          };
 
           if (!response.permiteCadastro || !response.documentoValido) {
             this.documentoValidado = false;
@@ -225,11 +257,11 @@ export class FornecedorListPageComponent {
           this.preencherFormularioComValidacao(response);
           this.mensagemSucesso = 'Documento válido. Cadastro liberado para campos complementares.';
         },
-        error: () => {
+        error: (error) => {
           this.documentoValidado = false;
           this.bloquearFormularioCadastro();
           this.validacaoDocumento = null;
-          this.mensagemErro = 'Não foi possível validar o documento informado.';
+          this.mensagemErro = ApiError.fromHttpError(error).getFriendlyMessage('validar o documento informado');
         }
       });
   }
@@ -267,7 +299,7 @@ export class FornecedorListPageComponent {
           this.mensagemSucesso = 'Fornecedor salvo com sucesso.';
 
           this.validacaoDocumento = {
-            documento: fornecedor.documento,
+            documento: BrInputMaskUtil.formatCpfCnpj(fornecedor.documento),
             nome: fornecedor.nome,
             tipoDocumento: fornecedor.tipoDocumento,
             situacaoCadastral: fornecedor.situacaoCadastral,
@@ -276,15 +308,17 @@ export class FornecedorListPageComponent {
             dataValidacao: new Date().toISOString()
           };
 
-          this.documentoForm.controls.documento.setValue(fornecedor.documento);
+          this.documentoForm.controls.documento.setValue(
+            BrInputMaskUtil.formatCpfCnpj(fornecedor.documento)
+          );
           this.preencherFormularioComFornecedor(fornecedor);
 
           if (!this.emModoCadastro) {
             this.irParaLista();
           }
         },
-        error: () => {
-          this.mensagemErro = 'Não foi possível salvar o fornecedor.';
+        error: (error) => {
+          this.mensagemErro = ApiError.fromHttpError(error).getFriendlyMessage('salvar o fornecedor');
         }
       });
   }
@@ -308,7 +342,7 @@ export class FornecedorListPageComponent {
           this.documentoValidado = true;
 
           this.validacaoDocumento = {
-            documento: fornecedorCompleto.documento,
+            documento: BrInputMaskUtil.formatCpfCnpj(fornecedorCompleto.documento),
             nome: fornecedorCompleto.nome,
             tipoDocumento: fornecedorCompleto.tipoDocumento,
             situacaoCadastral: fornecedorCompleto.situacaoCadastral,
@@ -317,11 +351,15 @@ export class FornecedorListPageComponent {
             dataValidacao: undefined
           };
 
-          this.documentoForm.controls.documento.setValue(fornecedorCompleto.documento);
+          this.documentoForm.controls.documento.setValue(
+            BrInputMaskUtil.formatCpfCnpj(fornecedorCompleto.documento)
+          );
           this.preencherFormularioComFornecedor(fornecedorCompleto);
         },
-        error: () => {
-          this.mensagemErro = 'Não foi possível carregar o fornecedor para edição.';
+        error: (error) => {
+          this.mensagemErro = ApiError.fromHttpError(error).getFriendlyMessage(
+            'carregar o fornecedor para edição'
+          );
           this.redefinirFluxo(true);
         }
       });
@@ -359,8 +397,10 @@ export class FornecedorListPageComponent {
 
           this.carregarFornecedores();
         },
-        error: () => {
-          this.mensagemListaErro = 'Não foi possível desativar o fornecedor.';
+        error: (error) => {
+          this.mensagemListaErro = ApiError.fromHttpError(error).getFriendlyMessage(
+            'desativar o fornecedor'
+          );
         }
       });
   }
@@ -415,10 +455,12 @@ export class FornecedorListPageComponent {
           this.fornecedores = response.content;
           this.totalElements = response.totalElements;
         },
-        error: () => {
+        error: (error) => {
           this.fornecedores = [];
           this.totalElements = 0;
-          this.mensagemListaErro = 'Não foi possível carregar os fornecedores.';
+          this.mensagemListaErro = ApiError.fromHttpError(error).getFriendlyMessage(
+            'carregar os fornecedores'
+          );
         }
       });
   }
@@ -429,7 +471,9 @@ export class FornecedorListPageComponent {
     this.cadastroForm.enable({ emitEvent: false });
     this.cadastroForm.patchValue({
       nome: validacao.nome ?? '',
-      documento: validacao.documento ?? this.documentoForm.controls.documento.value,
+      documento:
+        BrInputMaskUtil.formatCpfCnpj(validacao.documento) ??
+        this.documentoForm.controls.documento.value,
       tipoDocumento: validacao.tipoDocumento ?? 'CNPJ',
       situacaoCadastral: validacao.situacaoCadastral ?? 'ATIVA'
     });
@@ -441,27 +485,27 @@ export class FornecedorListPageComponent {
     this.cadastroForm.enable({ emitEvent: false });
     this.cadastroForm.patchValue({
       nome: fornecedor.nome,
-      documento: fornecedor.documento,
+      documento: BrInputMaskUtil.formatCpfCnpj(fornecedor.documento),
       tipoDocumento: fornecedor.tipoDocumento,
       situacaoCadastral: fornecedor.situacaoCadastral,
       email: fornecedor.email ?? '',
-      telefone: fornecedor.telefone ?? '',
+      telefone: BrInputMaskUtil.formatPhone(fornecedor.telefone ?? ''),
       endereco: fornecedor.endereco ?? '',
       cidade: fornecedor.cidade ?? '',
-      uf: fornecedor.uf ?? ''
+      uf: BrInputMaskUtil.normalizeUf(fornecedor.uf ?? '')
     });
     this.bloquearCamposValidados();
     this.habilitarCamposComplementares();
   }
 
   private montarRequest(): FornecedorRequest {
-    const nome = this.cadastroForm.controls.nome.value.trim();
-    const documento = this.somenteDigitos(this.cadastroForm.controls.documento.value);
-    const email = this.cadastroForm.controls.email.value.trim();
-    const telefone = this.cadastroForm.controls.telefone.value.trim();
-    const endereco = this.cadastroForm.controls.endereco.value.trim();
-    const cidade = this.cadastroForm.controls.cidade.value.trim();
-    const uf = this.cadastroForm.controls.uf.value.trim().toUpperCase();
+    const nome = BrInputMaskUtil.normalizeSpaces(this.cadastroForm.controls.nome.value);
+    const documento = BrInputMaskUtil.onlyDigits(this.cadastroForm.controls.documento.value);
+    const email = BrInputMaskUtil.normalizeEmail(this.cadastroForm.controls.email.value);
+    const telefone = BrInputMaskUtil.onlyDigits(this.cadastroForm.controls.telefone.value);
+    const endereco = BrInputMaskUtil.normalizeSpaces(this.cadastroForm.controls.endereco.value);
+    const cidade = BrInputMaskUtil.normalizeSpaces(this.cadastroForm.controls.cidade.value);
+    const uf = BrInputMaskUtil.normalizeUf(this.cadastroForm.controls.uf.value);
 
     return {
       nome,
@@ -474,10 +518,6 @@ export class FornecedorListPageComponent {
       cidade: cidade || undefined,
       uf: uf || undefined
     };
-  }
-
-  private somenteDigitos(valor: string): string {
-    return valor.replace(/\D+/g, '');
   }
 
   private bloquearFormularioCadastro(): void {

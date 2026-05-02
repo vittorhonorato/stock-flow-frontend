@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { PageEvent } from '@angular/material/paginator';
 import { finalize } from 'rxjs';
+import { ApiError } from '../../../../core/errors/api-error';
 import { CategoriaService } from '../../services/categoria.service';
 import { CategoriaFilter } from '../../models/categoria-filter.model';
 import { CategoriaRequest } from '../../models/categoria-request.model';
@@ -54,10 +55,10 @@ export class CategoriaListPageComponent implements OnInit {
           this.categorias = response.content;
           this.totalElements = response.totalElements;
         },
-        error: () => {
+        error: (error) => {
           this.categorias = [];
           this.totalElements = 0;
-          this.erroMensagem = 'Não foi possível carregar as categorias.';
+          this.erroMensagem = ApiError.fromHttpError(error).getFriendlyMessage('carregar as categorias');
         }
       });
   }
@@ -122,8 +123,8 @@ export class CategoriaListPageComponent implements OnInit {
         next: () => {
           this.carregarCategorias();
         },
-        error: () => {
-          this.erroMensagem = 'Não foi possível excluir a categoria.';
+        error: (error) => {
+          this.erroMensagem = ApiError.fromHttpError(error).getFriendlyMessage('excluir a categoria');
         }
       });
   }
@@ -155,8 +156,8 @@ export class CategoriaListPageComponent implements OnInit {
           this.categoriaSelecionada = null;
           this.carregarCategorias();
         },
-        error: () => {
-          this.erroMensagem = 'Não foi possível salvar a categoria.';
+        error: (error) => {
+          this.erroMensagem = ApiError.fromHttpError(error).getFriendlyMessage('salvar a categoria');
         }
       });
   }

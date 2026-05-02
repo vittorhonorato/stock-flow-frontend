@@ -19,7 +19,12 @@
         <form [formGroup]="documentoForm" class="fornecedor-validacao__form" (ngSubmit)="validarDocumento()">
           <mat-form-field appearance="outline" class="fornecedor-validacao__input">
             <mat-label>CPF/CNPJ</mat-label>
-            <input matInput formControlName="documento" placeholder="Digite apenas números" />
+            <input
+              matInput
+              formControlName="documento"
+              placeholder="Digite apenas números"
+              (input)="onDocumentoValidacaoInput()"
+            />
             <mat-error *ngIf="documentoForm.controls.documento.hasError('required')">
               Documento é obrigatório.
             </mat-error>
@@ -112,7 +117,7 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Documento</mat-label>
-              <input matInput formControlName="documento" />
+              <input matInput formControlName="documento" (input)="onDocumentoCadastroInput()" />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -141,7 +146,7 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Telefone</mat-label>
-              <input matInput formControlName="telefone" />
+              <input matInput formControlName="telefone" (input)="onTelefoneInput()" />
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="fornecedor-form__full">
