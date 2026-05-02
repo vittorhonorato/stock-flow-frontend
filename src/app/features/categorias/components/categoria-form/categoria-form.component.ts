@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from
 import { FormBuilder, Validators } from '@angular/forms';
 import { CategoriaRequest } from '../../models/categoria-request.model';
 import { CategoriaResponse } from '../../models/categoria-response.model';
+import { BrInputMaskUtil } from '../../../../shared/utils/br-input-mask.util';
 
 @Component({
   selector: 'app-categoria-form',
@@ -34,8 +35,8 @@ export class CategoriaFormComponent implements OnChanges {
       return;
     }
 
-    const nome = this.form.controls.nome.value.trim();
-    const descricao = this.form.controls.descricao.value.trim();
+    const nome = BrInputMaskUtil.normalizeSpaces(this.form.controls.nome.value);
+    const descricao = BrInputMaskUtil.normalizeSpaces(this.form.controls.descricao.value);
 
     if (!nome) {
       this.form.controls.nome.setErrors({ required: true });
@@ -47,6 +48,16 @@ export class CategoriaFormComponent implements OnChanges {
       nome,
       descricao: descricao || undefined
     });
+  }
+
+  onNomeBlur(): void {
+    const nomeNormalizado = BrInputMaskUtil.normalizeSpaces(this.form.controls.nome.value);
+    this.form.controls.nome.setValue(nomeNormalizado, { emitEvent: false });
+  }
+
+  onDescricaoBlur(): void {
+    const descricaoNormalizada = BrInputMaskUtil.normalizeSpaces(this.form.controls.descricao.value);
+    this.form.controls.descricao.setValue(descricaoNormalizada, { emitEvent: false });
   }
 
   private preencherFormulario(categoria: CategoriaResponse | null): void {
@@ -64,4 +75,3 @@ export class CategoriaFormComponent implements OnChanges {
     });
   }
 }
-

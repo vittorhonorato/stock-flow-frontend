@@ -4,6 +4,7 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { PageResponse } from '../../../shared/models/page-response.model';
 import { SelectOption } from '../../../shared/models/select-option.model';
+import { BrInputMaskUtil } from '../../../shared/utils/br-input-mask.util';
 import { CategoriaFilter } from '../models/categoria-filter.model';
 import { CategoriaRequest } from '../models/categoria-request.model';
 import { CategoriaResponse } from '../models/categoria-response.model';
@@ -26,8 +27,10 @@ export class CategoriaService {
       .set('page', String(filter.page))
       .set('size', String(filter.size));
 
-    if (filter.termo?.trim()) {
-      params = params.set('termo', filter.termo.trim());
+    const termoNormalizado = filter.termo ? BrInputMaskUtil.normalizeSpaces(filter.termo) : '';
+
+    if (termoNormalizado) {
+      params = params.set('termo', termoNormalizado);
     }
 
     return this.http.get<PageResponse<CategoriaResponse>>(this.apiUrl, { params });

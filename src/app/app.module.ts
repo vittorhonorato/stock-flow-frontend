@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -31,6 +31,7 @@ import { StatusBadgeComponent } from './shared/components/status-badge/status-ba
 import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
 import { CategoriaFormComponent } from './features/categorias/components/categoria-form/categoria-form.component';
 import { CategoriaTableComponent } from './features/categorias/components/categoria-table/categoria-table.component';
+import { ApiErrorInterceptor } from './core/interceptors/api-error.interceptor';
 
 @NgModule({
   declarations: [
@@ -68,7 +69,13 @@ import { CategoriaTableComponent } from './features/categorias/components/catego
     StatusBadgeComponent,
     ConfirmDialogComponent
   ],
-  providers: [],
+  providers: [
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: ApiErrorInterceptor,
+      multi: true
+    }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

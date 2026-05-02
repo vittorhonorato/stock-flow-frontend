@@ -1,1 +1,9 @@
-<p>produto-list-page works!</p>
+<div class="produto-list-page">
+  <label for="produto-termo-busca">Buscar produto</label>
+  <input
+    id="produto-termo-busca"
+    type="text"
+    placeholder="Ex: Mouse sem fio"
+    (blur)="normalizarTermoBusca($event)" />
+  <p>produto-list-page works!</p>
+</div>

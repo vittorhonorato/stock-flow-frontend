@@ -7,6 +7,7 @@ import { CategoriaService } from '../../services/categoria.service';
 import { CategoriaFilter } from '../../models/categoria-filter.model';
 import { CategoriaRequest } from '../../models/categoria-request.model';
 import { CategoriaResponse } from '../../models/categoria-response.model';
+import { BrInputMaskUtil } from '../../../../shared/utils/br-input-mask.util';
 
 @Component({
   selector: 'app-categoria-list-page',
@@ -64,7 +65,8 @@ export class CategoriaListPageComponent implements OnInit {
   }
 
   pesquisar(): void {
-    const termo = this.termoControl.value.trim();
+    const termo = BrInputMaskUtil.normalizeSpaces(this.termoControl.value);
+    this.termoControl.setValue(termo, { emitEvent: false });
 
     this.filter = {
       ...this.filter,

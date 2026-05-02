@@ -27,6 +27,10 @@ export class ApiError extends Error {
   }
 
   static fromHttpError(error: unknown): ApiError {
+    if (error instanceof ApiError) {
+      return error;
+    }
+
     if (!(error instanceof HttpErrorResponse)) {
       return new ApiError({
         status: 0,
