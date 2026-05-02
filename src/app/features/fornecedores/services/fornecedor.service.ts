@@ -9,11 +9,6 @@ import { FornecedorRequest } from '../models/fornecedor-request.model';
 import { FornecedorResponse } from '../models/fornecedor-response.model';
 import { ValidacaoDocumentoFornecedorResponse } from '../models/fornecedor-validacao-documento-response.model';
 
-interface FornecedorOpcaoApi {
-  id: number;
-  nome: string;
-}
-
 @Injectable({
   providedIn: 'root'
 })
@@ -55,12 +50,14 @@ export class FornecedorService {
   }
 
   listarOpcoes(): Observable<SelectOption<number>[]> {
-    return this.http.get<FornecedorOpcaoApi[]>(`${this.apiUrl}/opcoes`).pipe(
-      map((options) =>
-        options.map((option) => ({
-          value: option.id,
-          label: option.nome
-        }))
+    return this.listar({ page: 0, size: 200 }).pipe(
+      map((page) =>
+        page.content
+          .filter((fornecedor) => fornecedor.ativo)
+          .map((fornecedor) => ({
+            value: fornecedor.id,
+            label: fornecedor.nome
+          }))
       )
     );
   }
