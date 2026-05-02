@@ -1,1 +1,184 @@
-<p>fornecedor-list-page works!</p>
+<div class="page-container fornecedor-page">
+  <app-page-header
+    title="Fornecedores"
+    subtitle="Valide CPF/CNPJ e conclua o cadastro completo do fornecedor."
+  >
+    <button type="button" mat-stroked-button class="btn-secondary" (click)="redefinirFluxo()">
+      Listar Fornecedores
+    </button>
+  </app-page-header>
+
+  <div class="fornecedor-page__grid">
+    <section class="table-card fornecedor-validacao">
+      <header class="fornecedor-card__header">
+        <span class="fornecedor-card__step">1</span>
+        <h2 class="section-title">Validação de Documento</h2>
+      </header>
+
+      <form [formGroup]="documentoForm" class="fornecedor-validacao__form" (ngSubmit)="validarDocumento()">
+        <mat-form-field appearance="outline" class="fornecedor-validacao__input">
+          <mat-label>CPF/CNPJ</mat-label>
+          <input matInput formControlName="documento" placeholder="Digite apenas números" />
+          <mat-error *ngIf="documentoForm.controls.documento.hasError('required')">
+            Documento é obrigatório.
+          </mat-error>
+          <mat-error *ngIf="documentoForm.controls.documento.hasError('minlength')">
+            Documento deve ter ao menos 11 dígitos.
+          </mat-error>
+        </mat-form-field>
+
+        <button type="submit" mat-flat-button color="primary" class="btn-primary" [disabled]="validandoDocumento">
+          {{ validandoDocumento ? 'Validando...' : 'Validar' }}
+        </button>
+      </form>
+
+      <p *ngIf="mensagemErro" class="fornecedor-alert fornecedor-alert--danger">{{ mensagemErro }}</p>
+      <p *ngIf="mensagemSucesso" class="fornecedor-alert fornecedor-alert--success">{{ mensagemSucesso }}</p>
+
+      <div class="fornecedor-validacao__divider"></div>
+
+      <div *ngIf="validacaoDocumento" class="fornecedor-validacao__dados">
+        <p class="section-subtitle fornecedor-validacao__subtitle">Dados retornados da Receita Federal</p>
+
+        <dl class="fornecedor-validacao__list">
+          <div class="fornecedor-validacao__row">
+            <dt>Razão Social</dt>
+            <dd>{{ validacaoDocumento.nome }}</dd>
+          </div>
+
+          <div class="fornecedor-validacao__row">
+            <dt>Documento</dt>
+            <dd>{{ validacaoDocumento.documento }}</dd>
+          </div>
+
+          <div class="fornecedor-validacao__row">
+            <dt>Tipo Documento</dt>
+            <dd>{{ validacaoDocumento.tipoDocumento }}</dd>
+          </div>
+
+          <div class="fornecedor-validacao__row">
+            <dt>Situação Cadastral</dt>
+            <dd>
+              <app-status-badge
+                [label]="validacaoDocumento.situacaoCadastral"
+                [type]="validacaoDocumento.situacaoCadastral === 'ATIVA' ? 'success' : 'neutral'"
+              ></app-status-badge>
+            </dd>
+          </div>
+
+          <div class="fornecedor-validacao__row">
+            <dt>Data Validação</dt>
+            <dd>
+              {{
+                validacaoDocumento.dataValidacao
+                  ? (validacaoDocumento.dataValidacao | date: 'dd/MM/yyyy HH:mm')
+                  : 'Não informado'
+              }}
+            </dd>
+          </div>
+        </dl>
+
+        <p class="fornecedor-note">
+          Os dados acima foram preenchidos automaticamente para agilizar o cadastro.
+        </p>
+      </div>
+    </section>
+
+    <section class="form-card fornecedor-form">
+      <header class="fornecedor-card__header">
+        <span class="fornecedor-card__step">2</span>
+        <h2 class="section-title">Cadastrar Fornecedor</h2>
+      </header>
+
+      <p class="section-subtitle">
+        {{ documentoValidado ? 'Confira os dados e finalize o cadastro.' : 'Valide o documento para liberar o formulário.' }}
+      </p>
+
+      <form [formGroup]="cadastroForm" class="fornecedor-form__body" (ngSubmit)="salvarFornecedor()">
+        <div class="fornecedor-form__grid fornecedor-form__grid--2">
+          <mat-form-field appearance="outline">
+            <mat-label>Nome/Razão Social</mat-label>
+            <input matInput formControlName="nome" />
+            <mat-error *ngIf="cadastroForm.controls.nome.hasError('required')">
+              Nome é obrigatório.
+            </mat-error>
+            <mat-error *ngIf="cadastroForm.controls.nome.hasError('minlength')">
+              Nome deve ter no mínimo 2 caracteres.
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Documento</mat-label>
+            <input matInput formControlName="documento" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo Documento</mat-label>
+            <mat-select formControlName="tipoDocumento">
+              <mat-option *ngFor="let tipo of tiposDocumento" [value]="tipo">{{ tipo }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Situação Cadastral</mat-label>
+            <mat-select formControlName="situacaoCadastral">
+              <mat-option *ngFor="let situacao of situacoesCadastrais" [value]="situacao">
+                {{ situacao }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>E-mail</mat-label>
+            <input matInput formControlName="email" />
+            <mat-error *ngIf="cadastroForm.controls.email.hasError('email')">
+              E-mail inválido.
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Telefone</mat-label>
+            <input matInput formControlName="telefone" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="fornecedor-form__full">
+            <mat-label>Endereço</mat-label>
+            <input matInput formControlName="endereco" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cidade</mat-label>
+            <input matInput formControlName="cidade" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>UF</mat-label>
+            <mat-select formControlName="uf">
+              <mat-option value="">Selecione</mat-option>
+              <mat-option *ngFor="let uf of estadosUf" [value]="uf">{{ uf }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="fornecedor-form__actions">
+          <button type="button" mat-stroked-button class="btn-ghost" (click)="redefinirFluxo()">
+            Voltar
+          </button>
+          <button
+            type="submit"
+            mat-flat-button
+            color="primary"
+            class="btn-primary"
+            [disabled]="salvando || cadastroForm.disabled"
+          >
+            {{ salvando ? 'Salvando...' : 'Salvar' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div *ngIf="validandoDocumento" class="fornecedor-page__loading-backdrop">
+    <app-loading message="Validando documento..."></app-loading>
+  </div>
+</div>
