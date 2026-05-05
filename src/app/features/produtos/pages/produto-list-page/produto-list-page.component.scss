@@ -60,6 +60,12 @@
   overflow-x: auto;
 }
 
+.produto-table__estoque {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .produto-table {
   width: 100%;
   min-width: 980px;

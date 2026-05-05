@@ -1,15 +1,21 @@
-import { TipoDocumentoFornecedor } from './fornecedor-request.model';
+import {
+  SituacaoCadastralFornecedor,
+  TipoDocumentoFornecedor
+} from './fornecedor-request.model';
 
 export interface FornecedorResponse {
   id: number;
   nome: string;
   documento: string;
   tipoDocumento: TipoDocumentoFornecedor;
-  situacaoCadastral: string;
+  situacaoCadastral: SituacaoCadastralFornecedor;
   email?: string;
   telefone?: string;
-  endereco?: string;
-  cidade?: string;
-  uf?: string;
+  street?: string;
+  city?: string;
+  state?: string;
   ativo: boolean;
+  dataUltimaValidacao?: string;
+  dataCriacao?: string;
+  dataAtualizacao?: string;
 }

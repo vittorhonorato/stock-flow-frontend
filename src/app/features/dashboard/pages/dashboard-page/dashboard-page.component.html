@@ -1,1 +1,180 @@
-<p>dashboard-page works!</p>
+<div class="page-container dashboard-page">
+  <h2 class="dashboard-page__title">Dashboard</h2>
+
+  <p *ngIf="erroMensagem" class="dashboard-page__alert dashboard-page__alert--danger">{{ erroMensagem }}</p>
+
+  <app-loading *ngIf="loading" message="Carregando dados do dashboard..."></app-loading>
+
+  <app-empty-state
+    *ngIf="!loading && resumoCards.length === 0"
+    icon="📊"
+    title="Não foi possível carregar o dashboard"
+    description="Tente atualizar para buscar novamente os dados reais.">
+    <button type="button" mat-flat-button color="primary" class="btn-primary" (click)="recarregar()">
+      Recarregar
+    </button>
+  </app-empty-state>
+
+  <ng-container *ngIf="!loading && resumoCards.length > 0">
+  <section class="dashboard-page__metrics">
+    <article *ngFor="let card of resumoCards" class="card dashboard-metric-card">
+      <div class="dashboard-metric-card__icon" [ngClass]="'dashboard-metric-card__icon--' + card.variante">
+        <mat-icon>{{ card.icone }}</mat-icon>
+      </div>
+      <div class="dashboard-metric-card__content">
+        <p class="dashboard-metric-card__label">{{ card.titulo }}</p>
+        <p class="dashboard-metric-card__value" [ngClass]="'dashboard-metric-card__value--' + card.variante">
+          {{ card.valor }}
+        </p>
+        <p class="dashboard-metric-card__subtitle">
+          <span *ngIf="card.destaque" class="dashboard-metric-card__trend">{{ card.destaque }}</span>
+          {{ card.subtitulo }}
+        </p>
+      </div>
+    </article>
+  </section>
+
+  <section class="dashboard-page__content">
+    <article class="table-card dashboard-movements">
+      <div class="dashboard-card-header">
+        <div class="dashboard-card-header__title-wrap">
+          <span class="dashboard-card-header__icon">
+            <mat-icon>sync_alt</mat-icon>
+          </span>
+          <h3 class="section-title">Últimas Movimentações</h3>
+        </div>
+        <a routerLink="/movimentacoes" class="dashboard-card-header__link">Ver todas</a>
+      </div>
+
+      <app-empty-state
+        *ngIf="movimentacoes.length === 0"
+        icon="🧾"
+        title="Sem movimentações recentes"
+        description="Ainda não há registros de histórico para os produtos ativos.">
+      </app-empty-state>
+
+      <ng-container *ngIf="movimentacoes.length > 0">
+      <div class="dashboard-movements__table-wrapper">
+        <table class="dashboard-movements__table">
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Tipo</th>
+              <th>Quantidade</th>
+              <th>Data</th>
+              <th>Motivo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of movimentacoesPaginadas">
+              <td>
+                <div class="dashboard-product-cell">
+                  <span class="dashboard-product-cell__thumb">
+                    <mat-icon>{{ item.iconeProduto }}</mat-icon>
+                  </span>
+                  <span>
+                    <strong>{{ item.produto }}</strong>
+                    <small>SKU: {{ item.sku }}</small>
+                  </span>
+                </div>
+              </td>
+              <td>
+                <app-status-badge [label]="item.tipo" [type]="getTipoBadge(item.tipo)"></app-status-badge>
+              </td>
+              <td>{{ item.quantidade }}</td>
+              <td>{{ item.data | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ item.motivo }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="dashboard-movements__footer">
+        <button type="button" class="dashboard-page-button" (click)="paginaAnterior()" [disabled]="currentPage === 1">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+
+        <button
+          *ngFor="let page of pagesToShow"
+          type="button"
+          class="dashboard-page-button"
+          [class.dashboard-page-button--active]="page === currentPage"
+          (click)="selecionarPagina(page)">
+          {{ page }}
+        </button>
+
+        <button *ngIf="exibirEllipsis" type="button" class="dashboard-page-button" disabled>
+          ...
+        </button>
+
+        <button *ngIf="exibirEllipsis" type="button" class="dashboard-page-button" (click)="selecionarPagina(totalPages)">
+          {{ totalPages }}
+        </button>
+
+        <button
+          type="button"
+          class="dashboard-page-button"
+          (click)="proximaPagina()"
+          [disabled]="currentPage === totalPages">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+      </ng-container>
+    </article>
+
+    <aside class="dashboard-side">
+      <article class="form-card dashboard-shortcuts">
+        <div class="dashboard-card-header">
+          <div class="dashboard-card-header__title-wrap">
+            <span class="dashboard-card-header__icon">
+              <mat-icon>bolt</mat-icon>
+            </span>
+            <h3 class="section-title">Atalhos Rápidos</h3>
+          </div>
+        </div>
+
+        <a
+          *ngFor="let atalho of atalhos"
+          [routerLink]="atalho.rota"
+          class="dashboard-shortcut-item"
+          [ngClass]="'dashboard-shortcut-item--' + atalho.variante">
+          <span class="dashboard-shortcut-item__left">
+            <mat-icon>{{ atalho.icone }}</mat-icon>
+            {{ atalho.label }}
+          </span>
+          <mat-icon>chevron_right</mat-icon>
+        </a>
+      </article>
+
+      <article class="form-card dashboard-stock-status">
+        <h3 class="section-title">Situação do Estoque</h3>
+
+        <div class="dashboard-stock-status__content">
+          <div class="dashboard-stock-status__chart" [style.background]="donutGradient">
+            <span class="dashboard-stock-status__chart-hole"></span>
+          </div>
+
+          <ul class="dashboard-stock-status__legend">
+            <li *ngFor="let slice of estoqueSlices">
+              <span class="dashboard-stock-status__legend-label">
+                <span class="dashboard-stock-status__dot" [style.background]="slice.color"></span>
+                {{ slice.label }}
+              </span>
+              <span class="dashboard-stock-status__legend-value">
+                {{ slice.quantidade }} ({{ getPercentual(slice.quantidade) }})
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <footer class="dashboard-stock-status__footer">
+          <span>Última atualização: {{ ultimaAtualizacao }}</span>
+          <button type="button" mat-icon-button class="btn-ghost" aria-label="Atualizar" (click)="recarregar()">
+            <mat-icon>refresh</mat-icon>
+          </button>
+        </footer>
+      </article>
+    </aside>
+  </section>
+  </ng-container>
+</div>

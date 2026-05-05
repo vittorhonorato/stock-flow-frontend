@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormControl, ValidationErrors, Validators } from '@angular/forms';
 import { PageEvent } from '@angular/material/paginator';
 import { forkJoin, finalize } from 'rxjs';
 import { ApiError } from '../../../../core/errors/api-error';
@@ -41,6 +41,8 @@ export class ProdutoListPageComponent implements OnInit {
     quantidadeMinima: this.fb.control<number | null>(0, [Validators.required, Validators.min(0)]),
     categoriaId: this.fb.control<number | null>(null, [Validators.required]),
     fornecedorId: this.fb.control<number | null>(null, [Validators.required])
+  }, {
+    validators: [this.precoVendaMaiorOuIgualCustoValidator]
   });
 
   produtos: ProdutoResponse[] = [];
@@ -85,6 +87,10 @@ export class ProdutoListPageComponent implements OnInit {
 
   get pesquisandoPorSku(): boolean {
     return Boolean(this.filter.sku);
+  }
+
+  isEstoqueBaixo(produto: ProdutoResponse): boolean {
+    return produto.quantidadeAtual < produto.quantidadeMinima;
   }
 
   pesquisar(): void {
@@ -420,5 +426,16 @@ export class ProdutoListPageComponent implements OnInit {
 
   private normalizarSku(value: string): string {
     return BrInputMaskUtil.normalizeSpaces(value).toUpperCase();
+  }
+
+  private precoVendaMaiorOuIgualCustoValidator(control: AbstractControl): ValidationErrors | null {
+    const precoDeCusto = control.get('precoDeCusto')?.value as number | null;
+    const precoDeVenda = control.get('precoDeVenda')?.value as number | null;
+
+    if (precoDeCusto == null || precoDeVenda == null) {
+      return null;
+    }
+
+    return precoDeVenda < precoDeCusto ? { precoVendaMenorQueCusto: true } : null;
   }
 }

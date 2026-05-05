@@ -18,17 +18,9 @@ export class FornecedorService {
   constructor(private readonly http: HttpClient) {}
 
   listar(filter: FornecedorFilter): Observable<PageResponse<FornecedorResponse>> {
-    let params = new HttpParams()
+    const params = new HttpParams()
       .set('page', String(filter.page))
       .set('size', String(filter.size));
-
-    if (filter.termo?.trim()) {
-      params = params.set('termo', filter.termo.trim());
-    }
-
-    if (filter.tipoDocumento) {
-      params = params.set('tipoDocumento', filter.tipoDocumento);
-    }
 
     return this.http.get<PageResponse<FornecedorResponse>>(this.apiUrl, { params });
   }

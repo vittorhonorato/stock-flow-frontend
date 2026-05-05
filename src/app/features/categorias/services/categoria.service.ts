@@ -4,7 +4,6 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { PageResponse } from '../../../shared/models/page-response.model';
 import { SelectOption } from '../../../shared/models/select-option.model';
-import { BrInputMaskUtil } from '../../../shared/utils/br-input-mask.util';
 import { CategoriaFilter } from '../models/categoria-filter.model';
 import { CategoriaRequest } from '../models/categoria-request.model';
 import { CategoriaResponse } from '../models/categoria-response.model';
@@ -23,15 +22,9 @@ export class CategoriaService {
   constructor(private readonly http: HttpClient) {}
 
   listar(filter: CategoriaFilter): Observable<PageResponse<CategoriaResponse>> {
-    let params = new HttpParams()
+    const params = new HttpParams()
       .set('page', String(filter.page))
       .set('size', String(filter.size));
-
-    const termoNormalizado = filter.termo ? BrInputMaskUtil.normalizeSpaces(filter.termo) : '';
-
-    if (termoNormalizado) {
-      params = params.set('termo', termoNormalizado);
-    }
 
     return this.http.get<PageResponse<CategoriaResponse>>(this.apiUrl, { params });
   }
@@ -48,8 +41,8 @@ export class CategoriaService {
     return this.http.put<CategoriaResponse>(`${this.apiUrl}/${id}`, request);
   }
 
-  excluir(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  desativar(id: number): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/${id}/desativar`, null);
   }
 
   listarOpcoes(): Observable<SelectOption<number>[]> {

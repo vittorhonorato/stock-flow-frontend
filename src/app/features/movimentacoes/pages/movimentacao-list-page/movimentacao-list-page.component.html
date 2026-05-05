@@ -1,1 +1,104 @@
-<p>movimentacao-list-page works!</p>
+<div class="page-container movimentacao-page">
+  <app-page-header
+    title="Histórico de Movimentações"
+    subtitle="Consulte entradas, saídas e ajustes por produto."
+  ></app-page-header>
+
+  <section class="table-card movimentacao-page__card">
+    <div class="movimentacao-page__filters">
+      <mat-form-field appearance="outline" class="movimentacao-page__produto-filter">
+        <mat-label>Produto</mat-label>
+        <mat-select [formControl]="produtoControl" [disabled]="loadingProdutos">
+          <mat-option [value]="null">Selecione</mat-option>
+          <mat-option *ngFor="let produto of produtos" [value]="produto.value">{{ produto.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="movimentacao-page__actions">
+        <button type="button" mat-stroked-button class="btn-secondary" (click)="pesquisar()" [disabled]="loadingProdutos">
+          Pesquisar
+        </button>
+        <button type="button" mat-button class="btn-ghost" (click)="limpar()">Limpar</button>
+      </div>
+    </div>
+
+    <p *ngIf="erroMensagem" class="movimentacao-page__alert movimentacao-page__alert--danger">{{ erroMensagem }}</p>
+
+    <app-loading *ngIf="loadingProdutos" message="Carregando produtos..."></app-loading>
+
+    <ng-container *ngIf="!loadingProdutos">
+      <app-empty-state
+        *ngIf="!possuiProdutoSelecionado"
+        icon="🧾"
+        title="Selecione um produto"
+        description="Escolha um produto para visualizar o histórico de movimentações."
+      ></app-empty-state>
+
+      <ng-container *ngIf="possuiProdutoSelecionado">
+        <app-loading *ngIf="loadingHistorico" message="Carregando histórico..."></app-loading>
+
+        <ng-container *ngIf="!loadingHistorico">
+          <app-empty-state
+            *ngIf="historico.length === 0"
+            icon="📭"
+            title="Nenhuma movimentação encontrada"
+            description="Não há registros para o produto selecionado."
+          ></app-empty-state>
+
+          <ng-container *ngIf="historico.length > 0">
+            <div class="movimentacao-table__wrapper">
+              <table mat-table [dataSource]="historico" class="movimentacao-table">
+                <ng-container matColumnDef="data">
+                  <th mat-header-cell *matHeaderCellDef>Data</th>
+                  <td mat-cell *matCellDef="let item">{{ item.dataMovimentacao | date: 'dd/MM/yyyy HH:mm' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="produto">
+                  <th mat-header-cell *matHeaderCellDef>Produto</th>
+                  <td mat-cell *matCellDef="let item">{{ item.produtoNome }} ({{ item.produtoSku }})</td>
+                </ng-container>
+
+                <ng-container matColumnDef="tipo">
+                  <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                  <td mat-cell *matCellDef="let item">
+                    <app-status-badge
+                      [label]="item.tipoMovimentacao"
+                      [type]="getTipoMovimentacaoBadge(item.tipoMovimentacao)">
+                    </app-status-badge>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="quantidade">
+                  <th mat-header-cell *matHeaderCellDef>Quantidade</th>
+                  <td mat-cell *matCellDef="let item">{{ item.quantidade }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="estoqueAtual">
+                  <th mat-header-cell *matHeaderCellDef>Estoque Atual</th>
+                  <td mat-cell *matCellDef="let item">{{ item.quantidadeAtualProduto }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="motivo">
+                  <th mat-header-cell *matHeaderCellDef>Motivo</th>
+                  <td mat-cell *matCellDef="let item">{{ item.motivo }}</td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+              </table>
+            </div>
+
+            <mat-paginator
+              [length]="totalElements"
+              [pageIndex]="filtro.page"
+              [pageSize]="filtro.size"
+              [pageSizeOptions]="pageSizeOptions"
+              showFirstLastButtons
+              (page)="onPageChange($event)">
+            </mat-paginator>
+          </ng-container>
+        </ng-container>
+      </ng-container>
+    </ng-container>
+  </section>
+</div>

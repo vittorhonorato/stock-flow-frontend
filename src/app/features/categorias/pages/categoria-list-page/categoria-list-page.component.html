@@ -11,37 +11,6 @@
 
   <div class="categoria-page__grid">
     <section class="table-card categoria-page__table">
-      <div class="categoria-page__filters">
-        <mat-form-field appearance="outline" class="categoria-page__search">
-          <mat-label>Buscar categoria</mat-label>
-          <input
-            matInput
-            [formControl]="termoControl"
-            placeholder="Pesquise por nome ou descrição"
-            (keyup.enter)="pesquisar()"
-          />
-          <button
-            *ngIf="termoControl.value"
-            type="button"
-            mat-icon-button
-            matSuffix
-            (click)="limparFiltros()"
-            aria-label="Limpar busca"
-          >
-            <mat-icon>close</mat-icon>
-          </button>
-        </mat-form-field>
-
-        <div class="categoria-page__filter-actions">
-          <button type="button" mat-stroked-button class="btn-secondary" (click)="pesquisar()">
-            Pesquisar
-          </button>
-          <button type="button" mat-button class="btn-ghost" (click)="limparFiltros()">
-            Limpar
-          </button>
-        </div>
-      </div>
-
       <p *ngIf="erroMensagem" class="categoria-page__error">{{ erroMensagem }}</p>
 
       <app-loading *ngIf="loading" message="Carregando categorias..."></app-loading>
@@ -51,7 +20,7 @@
           *ngIf="categorias.length === 0"
           icon="📂"
           title="Nenhuma categoria encontrada"
-          description="Ajuste os filtros ou crie uma nova categoria para começar."
+          description="Crie uma nova categoria para começar."
         >
           <button type="button" mat-flat-button color="primary" class="btn-primary" (click)="novaCategoria()">
             Nova Categoria
@@ -83,9 +52,9 @@
 
   <div *ngIf="confirmandoExclusao" class="categoria-page__dialog-backdrop">
     <app-confirm-dialog
-      title="Excluir categoria"
-      [message]="'Deseja realmente excluir a categoria ' + (categoriaParaExcluir?.nome ?? '') + '?'"
-      confirmLabel="Excluir"
+      title="Desativar categoria"
+      [message]="'Deseja realmente desativar a categoria ' + (categoriaParaExcluir?.nome ?? '') + '?'"
+      confirmLabel="Desativar"
       cancelLabel="Cancelar"
       [danger]="true"
       (confirmed)="confirmarExclusao()"

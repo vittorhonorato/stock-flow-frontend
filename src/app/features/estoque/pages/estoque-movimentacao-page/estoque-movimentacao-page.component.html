@@ -1,1 +1,171 @@
-<p>estoque-movimentacao-page works!</p>
+<div class="page-container estoque-page">
+  <app-page-header
+    title="Movimentação de Estoque"
+    subtitle="Registre entradas, saídas e ajustes com rastreabilidade do histórico."
+  ></app-page-header>
+
+  <div class="estoque-page__grid">
+    <section class="table-card estoque-page__form-card">
+      <div class="estoque-page__modo-switch">
+        <button
+          type="button"
+          mat-stroked-button
+          class="btn-secondary"
+          [class.estoque-page__modo-switch--active]="modoSelecionado === 'ENTRADA'"
+          (click)="selecionarModo('ENTRADA')">
+          Entrada
+        </button>
+        <button
+          type="button"
+          mat-stroked-button
+          class="btn-secondary"
+          [class.estoque-page__modo-switch--active]="modoSelecionado === 'SAIDA'"
+          (click)="selecionarModo('SAIDA')">
+          Saída
+        </button>
+        <button
+          type="button"
+          mat-stroked-button
+          class="btn-secondary"
+          [class.estoque-page__modo-switch--active]="modoSelecionado === 'AJUSTE'"
+          (click)="selecionarModo('AJUSTE')">
+          Ajuste
+        </button>
+      </div>
+
+      <p *ngIf="erroMensagem" class="estoque-page__alert estoque-page__alert--danger">{{ erroMensagem }}</p>
+      <p *ngIf="sucessoMensagem" class="estoque-page__alert estoque-page__alert--success">{{ sucessoMensagem }}</p>
+
+      <app-loading *ngIf="loadingProdutos" message="Carregando produtos..."></app-loading>
+
+      <ng-container *ngIf="!loadingProdutos">
+        <app-empty-state
+          *ngIf="produtos.length === 0"
+          icon="📦"
+          title="Nenhum produto ativo encontrado"
+          description="Cadastre ou ative produtos para registrar movimentações."
+        ></app-empty-state>
+
+        <ng-container *ngIf="produtos.length > 0">
+          <form
+            *ngIf="modoSelecionado !== 'AJUSTE'; else ajusteTemplate"
+            [formGroup]="movimentacaoForm"
+            class="estoque-form"
+            (ngSubmit)="salvarMovimentacao()">
+            <mat-form-field appearance="outline">
+              <mat-label>Produto</mat-label>
+              <mat-select formControlName="produtoId">
+                <mat-option *ngFor="let produto of produtos" [value]="produto.value">{{ produto.label }}</mat-option>
+              </mat-select>
+              <mat-error *ngIf="movimentacaoForm.controls.produtoId.hasError('required')">
+                Produto é obrigatório.
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Quantidade</mat-label>
+              <input matInput type="number" min="1" step="1" formControlName="quantidade" />
+              <mat-error *ngIf="movimentacaoForm.controls.quantidade.hasError('required')">
+                Quantidade é obrigatória.
+              </mat-error>
+              <mat-error *ngIf="movimentacaoForm.controls.quantidade.hasError('min')">
+                Quantidade deve ser maior que zero.
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="estoque-form__full">
+              <mat-label>Motivo</mat-label>
+              <textarea matInput rows="3" formControlName="motivo"></textarea>
+              <mat-error *ngIf="movimentacaoForm.controls.motivo.hasError('required')">
+                Motivo é obrigatório.
+              </mat-error>
+              <mat-error *ngIf="movimentacaoForm.controls.motivo.hasError('maxlength')">
+                Motivo deve ter no máximo 255 caracteres.
+              </mat-error>
+            </mat-form-field>
+
+            <div class="estoque-form__actions">
+              <button type="submit" mat-flat-button color="primary" class="btn-primary" [disabled]="enviando">
+                {{ enviando ? 'Salvando...' : (modoSelecionado === 'ENTRADA' ? 'Registrar Entrada' : 'Registrar Saída') }}
+              </button>
+            </div>
+          </form>
+
+          <ng-template #ajusteTemplate>
+            <form [formGroup]="ajusteForm" class="estoque-form" (ngSubmit)="salvarMovimentacao()">
+              <mat-form-field appearance="outline">
+                <mat-label>Produto</mat-label>
+                <mat-select formControlName="produtoId">
+                  <mat-option *ngFor="let produto of produtos" [value]="produto.value">{{ produto.label }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="ajusteForm.controls.produtoId.hasError('required')">
+                  Produto é obrigatório.
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Nova Quantidade</mat-label>
+                <input matInput type="number" min="0" step="1" formControlName="novaQuantidade" />
+                <mat-error *ngIf="ajusteForm.controls.novaQuantidade.hasError('required')">
+                  Nova quantidade é obrigatória.
+                </mat-error>
+                <mat-error *ngIf="ajusteForm.controls.novaQuantidade.hasError('min')">
+                  Nova quantidade não pode ser negativa.
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="estoque-form__full">
+                <mat-label>Motivo</mat-label>
+                <textarea matInput rows="3" formControlName="motivo"></textarea>
+                <mat-error *ngIf="ajusteForm.controls.motivo.hasError('required')">
+                  Motivo é obrigatório.
+                </mat-error>
+                <mat-error *ngIf="ajusteForm.controls.motivo.hasError('maxlength')">
+                  Motivo deve ter no máximo 255 caracteres.
+                </mat-error>
+              </mat-form-field>
+
+              <div class="estoque-form__actions">
+                <button type="submit" mat-flat-button color="primary" class="btn-primary" [disabled]="enviando">
+                  {{ enviando ? 'Salvando...' : 'Registrar Ajuste' }}
+                </button>
+              </div>
+            </form>
+          </ng-template>
+        </ng-container>
+      </ng-container>
+    </section>
+
+    <aside class="form-card estoque-page__resultado" *ngIf="ultimaMovimentacao">
+      <h3 class="section-title">Última Movimentação</h3>
+      <div class="estoque-page__resultado-list">
+        <div class="estoque-page__resultado-item">
+          <span class="text-muted">Produto</span>
+          <strong>{{ ultimaMovimentacao.produtoNome }} ({{ ultimaMovimentacao.produtoSku }})</strong>
+        </div>
+        <div class="estoque-page__resultado-item">
+          <span class="text-muted">Tipo</span>
+          <app-status-badge
+            [label]="ultimaMovimentacao.tipoMovimentacao"
+            [type]="getTipoMovimentacaoBadge(ultimaMovimentacao.tipoMovimentacao)"></app-status-badge>
+        </div>
+        <div class="estoque-page__resultado-item">
+          <span class="text-muted">Quantidade movimentada</span>
+          <strong>{{ ultimaMovimentacao.quantidade }}</strong>
+        </div>
+        <div class="estoque-page__resultado-item">
+          <span class="text-muted">Quantidade atual</span>
+          <strong>{{ ultimaMovimentacao.quantidadeAtualProduto }}</strong>
+        </div>
+        <div class="estoque-page__resultado-item">
+          <span class="text-muted">Data</span>
+          <strong>{{ ultimaMovimentacao.dataMovimentacao | date: 'dd/MM/yyyy HH:mm' }}</strong>
+        </div>
+        <div class="estoque-page__resultado-item">
+          <span class="text-muted">Motivo</span>
+          <strong>{{ ultimaMovimentacao.motivo }}</strong>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>

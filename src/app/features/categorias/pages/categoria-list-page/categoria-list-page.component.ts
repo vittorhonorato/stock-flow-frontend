@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { FormControl } from '@angular/forms';
 import { PageEvent } from '@angular/material/paginator';
 import { finalize } from 'rxjs';
 import { ApiError } from '../../../../core/errors/api-error';
@@ -7,7 +6,6 @@ import { CategoriaService } from '../../services/categoria.service';
 import { CategoriaFilter } from '../../models/categoria-filter.model';
 import { CategoriaRequest } from '../../models/categoria-request.model';
 import { CategoriaResponse } from '../../models/categoria-response.model';
-import { BrInputMaskUtil } from '../../../../shared/utils/br-input-mask.util';
 
 @Component({
   selector: 'app-categoria-list-page',
@@ -15,7 +13,6 @@ import { BrInputMaskUtil } from '../../../../shared/utils/br-input-mask.util';
   styleUrls: ['./categoria-list-page.component.scss']
 })
 export class CategoriaListPageComponent implements OnInit {
-  readonly termoControl = new FormControl('', { nonNullable: true });
   readonly pageSizeOptions = [5, 10, 20];
 
   categorias: CategoriaResponse[] = [];
@@ -64,31 +61,6 @@ export class CategoriaListPageComponent implements OnInit {
       });
   }
 
-  pesquisar(): void {
-    const termo = BrInputMaskUtil.normalizeSpaces(this.termoControl.value);
-    this.termoControl.setValue(termo, { emitEvent: false });
-
-    this.filter = {
-      ...this.filter,
-      termo: termo || undefined,
-      page: 0
-    };
-
-    this.carregarCategorias();
-  }
-
-  limparFiltros(): void {
-    this.termoControl.setValue('');
-
-    this.filter = {
-      ...this.filter,
-      termo: undefined,
-      page: 0
-    };
-
-    this.carregarCategorias();
-  }
-
   novaCategoria(): void {
     this.categoriaSelecionada = null;
     this.showForm = true;
@@ -114,7 +86,7 @@ export class CategoriaListPageComponent implements OnInit {
     this.erroMensagem = null;
 
     this.categoriaService
-      .excluir(categoria.id)
+      .desativar(categoria.id)
       .pipe(
         finalize(() => {
           this.loading = false;
@@ -126,7 +98,7 @@ export class CategoriaListPageComponent implements OnInit {
           this.carregarCategorias();
         },
         error: (error) => {
-          this.erroMensagem = ApiError.fromHttpError(error).getFriendlyMessage('excluir a categoria');
+          this.erroMensagem = ApiError.fromHttpError(error).getFriendlyMessage('desativar a categoria');
         }
       });
   }

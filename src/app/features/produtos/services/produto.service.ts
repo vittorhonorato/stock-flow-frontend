@@ -18,7 +18,8 @@ export class ProdutoService {
   listar(filter: ProdutoFilter): Observable<PageResponse<ProdutoResponse>> {
     const params = new HttpParams()
       .set('page', String(filter.page))
-      .set('size', String(filter.size));
+      .set('size', String(filter.size))
+      .set('sort', 'id,asc');
 
     return this.http.get<PageResponse<ProdutoResponse>>(this.apiUrl, { params });
   }

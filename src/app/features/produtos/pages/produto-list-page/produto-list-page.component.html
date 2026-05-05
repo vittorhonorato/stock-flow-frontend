@@ -95,7 +95,13 @@
               <ng-container matColumnDef="estoque">
                 <th mat-header-cell *matHeaderCellDef>Estoque</th>
                 <td mat-cell *matCellDef="let produto">
-                  {{ produto.quantidadeAtual }} / mín. {{ produto.quantidadeMinima }}
+                  <div class="produto-table__estoque">
+                    <span>{{ produto.quantidadeAtual }} / mín. {{ produto.quantidadeMinima }}</span>
+                    <app-status-badge
+                      [label]="isEstoqueBaixo(produto) ? 'Abaixo do mínimo' : 'Estável'"
+                      [type]="isEstoqueBaixo(produto) ? 'danger' : 'success'"
+                    ></app-status-badge>
+                  </div>
                 </td>
               </ng-container>
 
@@ -195,6 +201,10 @@
             <input matInput type="number" min="0.01" step="0.01" formControlName="precoDeVenda" />
             <mat-error *ngIf="form.controls.precoDeVenda.hasError('required')">Preço de venda é obrigatório.</mat-error>
             <mat-error *ngIf="form.controls.precoDeVenda.hasError('min')">Valor deve ser maior que zero.</mat-error>
+            <mat-error
+              *ngIf="form.hasError('precoVendaMenorQueCusto') && (form.controls.precoDeCusto.dirty || form.controls.precoDeVenda.dirty)">
+              Preço de venda deve ser maior ou igual ao preço de custo.
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline">

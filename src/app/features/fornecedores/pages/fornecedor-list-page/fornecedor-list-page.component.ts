@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormControl, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, Validators } from '@angular/forms';
 import { PageEvent } from '@angular/material/paginator';
 import { finalize } from 'rxjs';
 import { ApiError } from '../../../../core/errors/api-error';
@@ -7,6 +7,7 @@ import { BrInputMaskUtil } from '../../../../shared/utils/br-input-mask.util';
 import { FornecedorFilter } from '../../models/fornecedor-filter.model';
 import {
   FornecedorRequest,
+  SituacaoCadastralFornecedor,
   TipoDocumentoFornecedor
 } from '../../models/fornecedor-request.model';
 import { FornecedorResponse } from '../../models/fornecedor-response.model';
@@ -30,13 +31,19 @@ export class FornecedorListPageComponent {
   private readonly camposComplementares = [
     'email',
     'telefone',
-    'endereco',
-    'cidade',
-    'uf'
+    'street',
+    'city',
+    'state'
   ] as const;
 
-  readonly tiposDocumento: TipoDocumentoFornecedor[] = ['CNPJ', 'CPF'];
-  readonly situacoesCadastrais = ['ATIVA', 'INATIVA', 'SUSPENSA', 'BAIXADA'];
+  readonly tiposDocumento: TipoDocumentoFornecedor[] = ['CNPJ'];
+  readonly situacoesCadastrais: SituacaoCadastralFornecedor[] = [
+    'NULA',
+    'ATIVA',
+    'SUSPENSA',
+    'INAPTA',
+    'BAIXADA'
+  ];
   readonly estadosUf = [
     'AC',
     'AL',
@@ -94,25 +101,20 @@ export class FornecedorListPageComponent {
     size: 5
   };
 
-  readonly termoControl = new FormControl('', { nonNullable: true });
-  readonly tipoDocumentoFiltroControl = new FormControl<TipoDocumentoFornecedor | ''>('', {
-    nonNullable: true
-  });
-
   readonly documentoForm = this.fb.nonNullable.group({
-    documento: ['', [Validators.required, Validators.minLength(11)]]
+    documento: ['', [Validators.required, this.cnpjValidator]]
   });
 
   readonly cadastroForm = this.fb.nonNullable.group({
     nome: ['', [Validators.required, Validators.minLength(2)]],
     documento: ['', [Validators.required]],
     tipoDocumento: ['CNPJ' as TipoDocumentoFornecedor, [Validators.required]],
-    situacaoCadastral: ['ATIVA', [Validators.required]],
+    situacaoCadastral: ['ATIVA' as SituacaoCadastralFornecedor, [Validators.required]],
     email: ['', [Validators.email]],
     telefone: [''],
-    endereco: [''],
-    cidade: [''],
-    uf: ['', [Validators.minLength(2), Validators.maxLength(2)]]
+    street: [''],
+    city: [''],
+    state: ['', [Validators.minLength(2), Validators.maxLength(2)]]
   });
 
   constructor(
@@ -158,25 +160,9 @@ export class FornecedorListPageComponent {
     this.redefinirFluxo(true);
   }
 
-  pesquisarFornecedores(): void {
+  atualizarListaFornecedores(): void {
     this.filtro = {
       ...this.filtro,
-      termo: this.termoControl.value.trim() || undefined,
-      tipoDocumento: this.tipoDocumentoFiltroControl.value || undefined,
-      page: 0
-    };
-
-    this.carregarFornecedores();
-  }
-
-  limparFiltrosLista(): void {
-    this.termoControl.setValue('');
-    this.tipoDocumentoFiltroControl.setValue('');
-
-    this.filtro = {
-      ...this.filtro,
-      termo: undefined,
-      tipoDocumento: undefined,
       page: 0
     };
 
@@ -195,7 +181,7 @@ export class FornecedorListPageComponent {
 
   onDocumentoValidacaoInput(): void {
     const control = this.documentoForm.controls.documento;
-    const formatted = BrInputMaskUtil.formatCpfCnpj(control.value);
+    const formatted = this.formatarCnpjProgressivo(control.value);
 
     if (control.value !== formatted) {
       control.setValue(formatted, { emitEvent: false });
@@ -204,7 +190,7 @@ export class FornecedorListPageComponent {
 
   onDocumentoCadastroInput(): void {
     const control = this.cadastroForm.controls.documento;
-    const formatted = BrInputMaskUtil.formatCpfCnpj(control.value);
+    const formatted = this.formatarCnpjProgressivo(control.value);
 
     if (control.value !== formatted) {
       control.setValue(formatted, { emitEvent: false });
@@ -226,11 +212,17 @@ export class FornecedorListPageComponent {
       return;
     }
 
+    const documento = BrInputMaskUtil.onlyDigits(this.documentoForm.controls.documento.value);
+
+    if (documento.length !== 14) {
+      this.documentoForm.controls.documento.setErrors({ cnpjInvalido: true });
+      this.documentoForm.controls.documento.markAsTouched();
+      return;
+    }
+
     this.mensagemErro = null;
     this.mensagemSucesso = null;
     this.validandoDocumento = true;
-
-    const documento = BrInputMaskUtil.onlyDigits(this.documentoForm.controls.documento.value);
 
     this.fornecedorService
       .validarDocumento(documento)
@@ -243,7 +235,10 @@ export class FornecedorListPageComponent {
         next: (response) => {
           this.validacaoDocumento = {
             ...response,
-            documento: BrInputMaskUtil.formatCpfCnpj(response.documento)
+            tipoDocumento: 'CNPJ',
+            documento: this.formatarCnpjProgressivo(response.documento),
+            telefone: BrInputMaskUtil.formatPhone(response.telefone ?? ''),
+            state: BrInputMaskUtil.normalizeUf(response.state ?? '')
           };
 
           if (!response.permiteCadastro || !response.documentoValido) {
@@ -299,17 +294,22 @@ export class FornecedorListPageComponent {
           this.mensagemSucesso = 'Fornecedor salvo com sucesso.';
 
           this.validacaoDocumento = {
-            documento: BrInputMaskUtil.formatCpfCnpj(fornecedor.documento),
+            documento: this.formatarCnpjProgressivo(fornecedor.documento),
             nome: fornecedor.nome,
-            tipoDocumento: fornecedor.tipoDocumento,
+            tipoDocumento: 'CNPJ',
             situacaoCadastral: fornecedor.situacaoCadastral,
+            email: fornecedor.email,
+            telefone: BrInputMaskUtil.formatPhone(fornecedor.telefone ?? ''),
+            street: fornecedor.street,
+            city: fornecedor.city,
+            state: BrInputMaskUtil.normalizeUf(fornecedor.state ?? ''),
             documentoValido: true,
             permiteCadastro: true,
             dataValidacao: new Date().toISOString()
           };
 
           this.documentoForm.controls.documento.setValue(
-            BrInputMaskUtil.formatCpfCnpj(fornecedor.documento)
+            this.formatarCnpjProgressivo(fornecedor.documento)
           );
           this.preencherFormularioComFornecedor(fornecedor);
 
@@ -342,17 +342,22 @@ export class FornecedorListPageComponent {
           this.documentoValidado = true;
 
           this.validacaoDocumento = {
-            documento: BrInputMaskUtil.formatCpfCnpj(fornecedorCompleto.documento),
+            documento: this.formatarCnpjProgressivo(fornecedorCompleto.documento),
             nome: fornecedorCompleto.nome,
-            tipoDocumento: fornecedorCompleto.tipoDocumento,
+            tipoDocumento: 'CNPJ',
             situacaoCadastral: fornecedorCompleto.situacaoCadastral,
+            email: fornecedorCompleto.email,
+            telefone: BrInputMaskUtil.formatPhone(fornecedorCompleto.telefone ?? ''),
+            street: fornecedorCompleto.street,
+            city: fornecedorCompleto.city,
+            state: BrInputMaskUtil.normalizeUf(fornecedorCompleto.state ?? ''),
             documentoValido: true,
             permiteCadastro: true,
             dataValidacao: undefined
           };
 
           this.documentoForm.controls.documento.setValue(
-            BrInputMaskUtil.formatCpfCnpj(fornecedorCompleto.documento)
+            this.formatarCnpjProgressivo(fornecedorCompleto.documento)
           );
           this.preencherFormularioComFornecedor(fornecedorCompleto);
         },
@@ -432,9 +437,9 @@ export class FornecedorListPageComponent {
       situacaoCadastral: 'ATIVA',
       email: '',
       telefone: '',
-      endereco: '',
-      cidade: '',
-      uf: ''
+      street: '',
+      city: '',
+      state: ''
     });
     this.bloquearFormularioCadastro();
   }
@@ -472,10 +477,15 @@ export class FornecedorListPageComponent {
     this.cadastroForm.patchValue({
       nome: validacao.nome ?? '',
       documento:
-        BrInputMaskUtil.formatCpfCnpj(validacao.documento) ??
+        this.formatarCnpjProgressivo(validacao.documento) ??
         this.documentoForm.controls.documento.value,
-      tipoDocumento: validacao.tipoDocumento ?? 'CNPJ',
-      situacaoCadastral: validacao.situacaoCadastral ?? 'ATIVA'
+      tipoDocumento: 'CNPJ',
+      situacaoCadastral: validacao.situacaoCadastral ?? 'ATIVA',
+      email: BrInputMaskUtil.normalizeEmail(validacao.email ?? ''),
+      telefone: BrInputMaskUtil.formatPhone(validacao.telefone ?? ''),
+      street: BrInputMaskUtil.normalizeSpaces(validacao.street ?? ''),
+      city: BrInputMaskUtil.normalizeSpaces(validacao.city ?? ''),
+      state: BrInputMaskUtil.normalizeUf(validacao.state ?? '')
     });
     this.bloquearCamposValidados();
     this.habilitarCamposComplementares();
@@ -485,14 +495,14 @@ export class FornecedorListPageComponent {
     this.cadastroForm.enable({ emitEvent: false });
     this.cadastroForm.patchValue({
       nome: fornecedor.nome,
-      documento: BrInputMaskUtil.formatCpfCnpj(fornecedor.documento),
-      tipoDocumento: fornecedor.tipoDocumento,
+      documento: this.formatarCnpjProgressivo(fornecedor.documento),
+      tipoDocumento: 'CNPJ',
       situacaoCadastral: fornecedor.situacaoCadastral,
       email: fornecedor.email ?? '',
       telefone: BrInputMaskUtil.formatPhone(fornecedor.telefone ?? ''),
-      endereco: fornecedor.endereco ?? '',
-      cidade: fornecedor.cidade ?? '',
-      uf: BrInputMaskUtil.normalizeUf(fornecedor.uf ?? '')
+      street: fornecedor.street ?? '',
+      city: fornecedor.city ?? '',
+      state: BrInputMaskUtil.normalizeUf(fornecedor.state ?? '')
     });
     this.bloquearCamposValidados();
     this.habilitarCamposComplementares();
@@ -503,20 +513,20 @@ export class FornecedorListPageComponent {
     const documento = BrInputMaskUtil.onlyDigits(this.cadastroForm.controls.documento.value);
     const email = BrInputMaskUtil.normalizeEmail(this.cadastroForm.controls.email.value);
     const telefone = BrInputMaskUtil.onlyDigits(this.cadastroForm.controls.telefone.value);
-    const endereco = BrInputMaskUtil.normalizeSpaces(this.cadastroForm.controls.endereco.value);
-    const cidade = BrInputMaskUtil.normalizeSpaces(this.cadastroForm.controls.cidade.value);
-    const uf = BrInputMaskUtil.normalizeUf(this.cadastroForm.controls.uf.value);
+    const street = BrInputMaskUtil.normalizeSpaces(this.cadastroForm.controls.street.value);
+    const city = BrInputMaskUtil.normalizeSpaces(this.cadastroForm.controls.city.value);
+    const state = BrInputMaskUtil.normalizeUf(this.cadastroForm.controls.state.value);
 
     return {
       nome,
       documento,
-      tipoDocumento: this.cadastroForm.controls.tipoDocumento.value,
+      tipoDocumento: 'CNPJ',
       situacaoCadastral: this.cadastroForm.controls.situacaoCadastral.value,
       email: email || undefined,
       telefone: telefone || undefined,
-      endereco: endereco || undefined,
-      cidade: cidade || undefined,
-      uf: uf || undefined
+      street: street || undefined,
+      city: city || undefined,
+      state: state || undefined
     };
   }
 
@@ -534,5 +544,38 @@ export class FornecedorListPageComponent {
     for (const campo of this.camposComplementares) {
       this.cadastroForm.controls[campo].enable({ emitEvent: false });
     }
+  }
+
+  private formatarCnpjProgressivo(value: string): string {
+    const digits = BrInputMaskUtil.onlyDigits(value).slice(0, 14);
+
+    if (digits.length <= 2) {
+      return digits;
+    }
+
+    if (digits.length <= 5) {
+      return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+    }
+
+    if (digits.length <= 8) {
+      return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
+    }
+
+    if (digits.length <= 12) {
+      return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
+    }
+
+    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
+  }
+
+  private cnpjValidator(control: AbstractControl): { cnpjInvalido: true } | null {
+    const value = String(control.value ?? '');
+    const digits = BrInputMaskUtil.onlyDigits(value);
+
+    if (!digits) {
+      return null;
+    }
+
+    return digits.length === 14 ? null : { cnpjInvalido: true };
   }
 }
