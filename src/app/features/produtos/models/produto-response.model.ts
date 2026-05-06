@@ -3,6 +3,7 @@ export interface ProdutoResponse {
   nome: string;
   sku: string;
   descricao?: string;
+  imagemUrl?: string;
   precoDeCusto: number;
   precoDeVenda: number;
   quantidadeAtual: number;

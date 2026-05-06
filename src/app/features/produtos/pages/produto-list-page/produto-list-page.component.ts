@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, ValidationErrors, Validators } from '@angular/forms';
 import { PageEvent } from '@angular/material/paginator';
 import { forkJoin, finalize } from 'rxjs';
@@ -17,7 +17,7 @@ import { ProdutoService } from '../../services/produto.service';
   templateUrl: './produto-list-page.component.html',
   styleUrls: ['./produto-list-page.component.scss']
 })
-export class ProdutoListPageComponent implements OnInit {
+export class ProdutoListPageComponent implements OnInit, OnDestroy {
   readonly displayedColumns = [
     'nome',
     'sku',
@@ -29,6 +29,8 @@ export class ProdutoListPageComponent implements OnInit {
     'acoes'
   ];
   readonly pageSizeOptions = [5, 10, 20];
+  readonly formatosImagemPermitidos = '.png,.jpg,.jpeg,.webp';
+  readonly tamanhoMaximoImagemBytes = 5 * 1024 * 1024;
 
   readonly skuControl = new FormControl('', { nonNullable: true });
 
@@ -63,6 +65,9 @@ export class ProdutoListPageComponent implements OnInit {
   produtoSelecionado: ProdutoResponse | null = null;
   produtoParaDesativar: ProdutoResponse | null = null;
   confirmandoDesativacao = false;
+  imagemSelecionada: File | null = null;
+  imagemPreviewUrl: string | null = null;
+  imagemAtualUrl: string | null = null;
 
   filter: ProdutoFilter = {
     page: 0,
@@ -81,12 +86,20 @@ export class ProdutoListPageComponent implements OnInit {
     this.carregarProdutos();
   }
 
+  ngOnDestroy(): void {
+    this.limparPreviewLocal();
+  }
+
   get exibirOverlayLoading(): boolean {
     return this.carregandoEdicao;
   }
 
   get pesquisandoPorSku(): boolean {
     return Boolean(this.filter.sku);
+  }
+
+  get imagemPreviewExibicao(): string | null {
+    return this.imagemPreviewUrl || this.imagemAtualUrl;
   }
 
   isEstoqueBaixo(produto: ProdutoResponse): boolean {
@@ -137,6 +150,9 @@ export class ProdutoListPageComponent implements OnInit {
     this.mensagemSucesso = null;
     this.erroMensagem = null;
     this.produtoSelecionado = null;
+    this.imagemSelecionada = null;
+    this.imagemAtualUrl = null;
+    this.limparPreviewLocal();
     this.showForm = true;
     this.preencherFormulario(null);
   }
@@ -206,6 +222,9 @@ export class ProdutoListPageComponent implements OnInit {
   cancelarFormulario(): void {
     this.showForm = false;
     this.produtoSelecionado = null;
+    this.imagemSelecionada = null;
+    this.imagemAtualUrl = null;
+    this.limparPreviewLocal();
     this.preencherFormulario(null);
   }
 
@@ -222,6 +241,53 @@ export class ProdutoListPageComponent implements OnInit {
   onDescricaoBlur(): void {
     const descricao = BrInputMaskUtil.normalizeSpaces(this.form.controls.descricao.value);
     this.form.controls.descricao.setValue(descricao, { emitEvent: false });
+  }
+
+  abrirSeletorImagem(input: HTMLInputElement): void {
+    input.click();
+  }
+
+  onImagemSelecionada(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const arquivo = input.files?.[0] ?? null;
+
+    if (!arquivo) {
+      return;
+    }
+
+    if (!this.isImagemValida(arquivo)) {
+      input.value = '';
+      this.imagemSelecionada = null;
+      this.limparPreviewLocal();
+      return;
+    }
+
+    this.imagemSelecionada = arquivo;
+    this.limparPreviewLocal();
+    this.imagemPreviewUrl = URL.createObjectURL(arquivo);
+    this.erroMensagem = null;
+  }
+
+  removerImagemSelecionada(input?: HTMLInputElement): void {
+    this.imagemSelecionada = null;
+    this.limparPreviewLocal();
+
+    if (input) {
+      input.value = '';
+    }
+  }
+
+  formatarTamanhoImagem(bytes: number): string {
+    if (bytes < 1024) {
+      return `${bytes} B`;
+    }
+
+    const kb = bytes / 1024;
+    if (kb < 1024) {
+      return `${kb.toFixed(1)} KB`;
+    }
+
+    return `${(kb / 1024).toFixed(2)} MB`;
   }
 
   salvarProduto(): void {
@@ -242,9 +308,10 @@ export class ProdutoListPageComponent implements OnInit {
     this.mensagemSucesso = null;
 
     const produtoId = this.produtoSelecionado?.id;
+    const imagem = this.imagemSelecionada;
     const request$ = produtoId
-      ? this.produtoService.atualizar(produtoId, request)
-      : this.produtoService.criar(request);
+      ? this.produtoService.atualizar(produtoId, request, imagem)
+      : this.produtoService.criar(request, imagem);
 
     request$
       .pipe(
@@ -256,6 +323,9 @@ export class ProdutoListPageComponent implements OnInit {
         next: () => {
           this.showForm = false;
           this.produtoSelecionado = null;
+          this.imagemSelecionada = null;
+          this.imagemAtualUrl = null;
+          this.limparPreviewLocal();
           this.preencherFormulario(null);
           this.mensagemSucesso = produtoId
             ? 'Produto atualizado com sucesso.'
@@ -349,6 +419,10 @@ export class ProdutoListPageComponent implements OnInit {
   }
 
   private preencherFormulario(produto: ProdutoResponse | null): void {
+    this.imagemSelecionada = null;
+    this.limparPreviewLocal();
+    this.imagemAtualUrl = produto?.imagemUrl ?? null;
+
     if (!produto) {
       this.form.reset({
         nome: '',
@@ -422,6 +496,29 @@ export class ProdutoListPageComponent implements OnInit {
       categoriaId,
       fornecedorId
     };
+  }
+
+  private isImagemValida(arquivo: File): boolean {
+    const tiposPermitidos = ['image/png', 'image/jpeg', 'image/webp'];
+
+    if (!tiposPermitidos.includes(arquivo.type)) {
+      this.erroMensagem = 'Formato de imagem inválido. Use PNG, JPG ou WEBP.';
+      return false;
+    }
+
+    if (arquivo.size > this.tamanhoMaximoImagemBytes) {
+      this.erroMensagem = 'A imagem deve ter no máximo 5MB.';
+      return false;
+    }
+
+    return true;
+  }
+
+  private limparPreviewLocal(): void {
+    if (this.imagemPreviewUrl) {
+      URL.revokeObjectURL(this.imagemPreviewUrl);
+      this.imagemPreviewUrl = null;
+    }
   }
 
   private normalizarSku(value: string): string {

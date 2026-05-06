@@ -32,15 +32,37 @@ export class ProdutoService {
     return this.http.get<ProdutoResponse>(`${this.apiUrl}/sku/${encodeURIComponent(sku)}`);
   }
 
-  criar(request: ProdutoRequest): Observable<ProdutoResponse> {
+  criar(request: ProdutoRequest, imagem?: File | null): Observable<ProdutoResponse> {
+    if (imagem) {
+      return this.http.post<ProdutoResponse>(this.apiUrl, this.criarFormData(request, imagem));
+    }
+
     return this.http.post<ProdutoResponse>(this.apiUrl, request);
   }
 
-  atualizar(id: number, request: ProdutoRequest): Observable<ProdutoResponse> {
+  atualizar(id: number, request: ProdutoRequest, imagem?: File | null): Observable<ProdutoResponse> {
+    if (imagem) {
+      return this.http.put<ProdutoResponse>(
+        `${this.apiUrl}/atualizar/${id}`,
+        this.criarFormData(request, imagem)
+      );
+    }
+
     return this.http.put<ProdutoResponse>(`${this.apiUrl}/atualizar/${id}`, request);
   }
 
   desativar(id: number): Observable<void> {
     return this.http.patch<void>(`${this.apiUrl}/${id}/desativar`, null);
+  }
+
+  private criarFormData(request: ProdutoRequest, imagem: File): FormData {
+    const formData = new FormData();
+    formData.append(
+      'produto',
+      new Blob([JSON.stringify(request)], { type: 'application/json' })
+    );
+    formData.append('imagem', imagem);
+
+    return formData;
   }
 }

@@ -69,7 +69,21 @@
             <table mat-table [dataSource]="produtos" class="produto-table">
               <ng-container matColumnDef="nome">
                 <th mat-header-cell *matHeaderCellDef>Nome</th>
-                <td mat-cell *matCellDef="let produto">{{ produto.nome }}</td>
+                <td mat-cell *matCellDef="let produto">
+                  <div class="produto-table__nome-cell">
+                    <span class="produto-table__thumb" [class.produto-table__thumb--placeholder]="!produto.imagemUrl">
+                      <img
+                        *ngIf="produto.imagemUrl; else imagemPlaceholder"
+                        [src]="produto.imagemUrl"
+                        [alt]="'Imagem de ' + produto.nome"
+                      />
+                      <ng-template #imagemPlaceholder>
+                        <mat-icon>inventory_2</mat-icon>
+                      </ng-template>
+                    </span>
+                    <span>{{ produto.nome }}</span>
+                  </div>
+                </td>
               </ng-container>
 
               <ng-container matColumnDef="sku">
@@ -235,6 +249,56 @@
             </mat-select>
             <mat-error *ngIf="form.controls.fornecedorId.hasError('required')">Fornecedor é obrigatório.</mat-error>
           </mat-form-field>
+
+          <div class="produto-form__full produto-form__upload">
+            <p class="produto-form__upload-label">Imagem do Produto</p>
+            <input
+              #imagemInput
+              type="file"
+              [accept]="formatosImagemPermitidos"
+              class="produto-form__upload-input"
+              (change)="onImagemSelecionada($event)"
+            />
+
+            <button
+              type="button"
+              class="produto-form__upload-box"
+              (click)="abrirSeletorImagem(imagemInput)"
+              [disabled]="saving"
+            >
+              <ng-container *ngIf="imagemPreviewExibicao; else estadoUploadVazio">
+                <img
+                  [src]="imagemPreviewExibicao"
+                  alt="Pré-visualização da imagem do produto"
+                  class="produto-form__upload-preview"
+                />
+              </ng-container>
+
+              <ng-template #estadoUploadVazio>
+                <mat-icon>cloud_upload</mat-icon>
+                <strong>Clique para enviar ou arraste a imagem aqui</strong>
+                <span>PNG, JPG ou WEBP até 5MB</span>
+              </ng-template>
+            </button>
+
+            <div class="produto-form__upload-meta">
+              <span *ngIf="imagemSelecionada">
+                {{ imagemSelecionada.name }} ({{ formatarTamanhoImagem(imagemSelecionada.size) }})
+              </span>
+              <span *ngIf="!imagemSelecionada && imagemAtualUrl">Imagem atual carregada.</span>
+              <span *ngIf="!imagemSelecionada && !imagemAtualUrl">Nenhuma imagem selecionada.</span>
+
+              <button
+                *ngIf="imagemSelecionada"
+                type="button"
+                mat-button
+                class="btn-ghost"
+                (click)="removerImagemSelecionada(imagemInput)"
+              >
+                Remover seleção
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="produto-form__actions">
